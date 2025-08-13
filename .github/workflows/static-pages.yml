@@ -51,17 +51,23 @@ jobs:
           mkdir -p _site/terms-of-use
           cp terms-of-use/index.html _site/terms-of-use/
 
-      - name: Copy assets and other files
+      - name: Copy all files and directories
         run: |
-          # Copy CSS and JS files
-          cp -r _astro _site/ 2>/dev/null || true
+          # Copy tất cả nội dung từ thư mục go_ai vào _site
+          if [ -d "go_ai" ]; then
+            cp -r go_ai/* _site/ 2>/dev/null || true
+            
+            # Copy các file ẩn từ go_ai nếu có
+            find go_ai -maxdepth 1 -name ".*" -not -name "." -not -name ".." -exec cp -r {} _site/ \; 2>/dev/null || true
+          else
+            echo "Thư mục go_ai không tồn tại"
+          fi
 
-          # Copy image files
-          cp *.png _site/ 2>/dev/null || true
-          cp *.svg _site/ 2>/dev/null || true
-          cp *.ico _site/ 2>/dev/null || true
-          cp *.xml _site/ 2>/dev/null || true
-          cp *.json _site/ 2>/dev/null || true
+          # List files để debug
+          echo "Files copied to _site:"
+          ls -la _site/
+          echo "Checking for logo.png:"
+          ls -la _site/logo.png 2>/dev/null || echo "logo.png not found"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
