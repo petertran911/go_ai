@@ -1,4 +1,4 @@
-# Workflow for deploying static content to GitHub Pages
+# GitHub Pages deployment workflow
 name: Deploy static content to Pages
 
 on:
@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying static files
+  # Single deploy job since we're just deploying
   deploy:
     environment:
       name: github-pages
@@ -31,34 +31,81 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Create .nojekyll file
-        run: touch .nojekyll
-      - name: Fix _astro folder and paths for GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare deployment directory
         run: |
-          # Copy _astro to astro (without underscore) to avoid GitHub Pages ignoring it
-          if [ -d "_astro" ]; then
-            cp -r _astro astro
+          # Create deployment directory
+          mkdir -p deploy
+
+          # Copy all HTML files
+          cp -r *.html deploy/ 2>/dev/null || true
+          cp -r privacy-and-cookies-policy deploy/ 2>/dev/null || true
+          cp -r terms-of-use deploy/ 2>/dev/null || true
+
+          # Copy all PNG files (icons, images, banners, particles)
+          cp *.png deploy/ 2>/dev/null || true
+
+          # Copy JSON files (manifest, etc)
+          cp *.json deploy/ 2>/dev/null || true
+
+          # Copy other assets
+          cp *.ico deploy/ 2>/dev/null || true
+          cp *.xml deploy/ 2>/dev/null || true
+          cp *.svg deploy/ 2>/dev/null || true
+
+          # Create assets directory and copy from _astro
+          mkdir -p deploy/assets
+
+          # Copy and rename _astro files to assets with simpler names
+          cp _astro/_landing_.DrknUcv3.css deploy/assets/main.css 2>/dev/null || true
+          cp _astro/client.BmwHh9ou.js deploy/assets/client.js 2>/dev/null || true
+          cp _astro/Particle.B4uU6dot.js deploy/assets/particle.js 2>/dev/null || true
+          cp _astro/index.B80Lgev0.js deploy/assets/index.js 2>/dev/null || true
+          cp _astro/jsx-runtime.B4ELNKBR.js deploy/assets/jsx-runtime.js 2>/dev/null || true
+
+          # Copy assets directory if exists
+          if [ -d "assets" ]; then
+            cp -r assets/* deploy/assets/ 2>/dev/null || true
           fi
 
-          # Simple approach: replace all absolute paths step by step
-          # Step 1: Fix _astro paths first (with and without quotes)
-          find . -name "*.html" -type f -exec sed -i.bak 's|"/_astro/|"/go_ai/astro/|g; s|/_astro/|/go_ai/astro/|g' {} \;
+      - name: Update asset paths in HTML files
+        run: |
+          cd deploy
 
-          # Step 2: Fix paths with quotes (href="/file", src="/file", content="/file")
-          find . -name "*.html" -type f -exec sed -i.bak 's|"/\([^hg]\)|"/go_ai/\1|g' {} \;
+          # Update CSS links
+          find . -name "*.html" -type f -exec sed -i 's|/_astro/_landing_.DrknUcv3.css|/go_ai/assets/main.css|g' {} \;
 
-          # Step 3: Fix paths without quotes (url(/file))
-          find . -name "*.html" -type f -exec sed -i.bak 's|url(/\([^hg]\)|url(/go_ai/\1|g' {} \;
+          # Update JavaScript links  
+          find . -name "*.html" -type f -exec sed -i 's|/_astro/client.BmwHh9ou.js|/go_ai/assets/client.js|g' {} \;
+          find . -name "*.html" -type f -exec sed -i 's|/_astro/Particle.B4uU6dot.js|/go_ai/assets/particle.js|g' {} \;
+          find . -name "*.html" -type f -exec sed -i 's|/_astro/index.B80Lgev0.js|/go_ai/assets/index.js|g' {} \;
+          find . -name "*.html" -type f -exec sed -i 's|/_astro/jsx-runtime.B4ELNKBR.js|/go_ai/assets/jsx-runtime.js|g' {} \;
 
-          # Remove backup files
-          find . -name "*.bak" -delete
+          # Update any remaining /_astro/ paths to /go_ai/assets/
+          find . -name "*.html" -type f -exec sed -i 's|/_astro/|/go_ai/assets/|g' {} \;
+
+          # Update root asset paths to include repository name for GitHub Pages
+          find . -name "*.html" -type f -exec sed -i 's|"/assets/|"/go_ai/assets/|g' {} \;
+          find . -name "*.html" -type f -exec sed -i 's|href="/|href="/go_ai/|g' {} \;
+          find . -name "*.html" -type f -exec sed -i 's|src="/|src="/go_ai/|g' {} \;
+
+          # Fix double repository name in paths
+          find . -name "*.html" -type f -exec sed -i 's|/go_ai/go_ai/|/go_ai/|g' {} \;
+
+      - name: List deployment contents
+        run: |
+          echo "Deployment directory structure:"
+          find deploy -type f | sort
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository as static content
-          path: "."
+          # Upload entire repository
+          path: "./deploy"
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
