@@ -1,9 +1,10 @@
-# GitHub Pages deployment workflow
-name: Deploy static content to Pages
+name: Deploy Static Pages to GitHub Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
+    branches: ["main"]
+  pull_request:
     branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -22,11 +23,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  # Build job
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,145 +33,49 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare deployment directory
+      - name: Create deployment directory
         run: |
-          # Create deployment directory
-          mkdir -p deploy
+          mkdir -p _site
 
-          # Copy main HTML file
-          cp index.html deploy/ 2>/dev/null || true
-
-          # Copy directory structures with their contents
-          if [ -d "privacy-and-cookies-policy" ]; then
-            cp -r privacy-and-cookies-policy deploy/
-          fi
-
-          if [ -d "terms-of-use" ]; then
-            cp -r terms-of-use deploy/
-          fi
-
-          # Copy all PNG files (icons, images, banners, particles)
-          cp *.png deploy/ 2>/dev/null || true
-
-          # Copy JSON files (manifest, etc)
-          cp *.json deploy/ 2>/dev/null || true
-
-          # Copy other assets
-          cp *.ico deploy/ 2>/dev/null || true
-          cp *.xml deploy/ 2>/dev/null || true
-          cp *.svg deploy/ 2>/dev/null || true
-
-          # Create assets directory and copy from _astro
-          mkdir -p deploy/assets
-
-          # Copy and rename _astro files to assets with simpler names
-          if [ -f "_astro/_landing_.DrknUcv3.css" ]; then
-            cp _astro/_landing_.DrknUcv3.css deploy/assets/main.css
-          fi
-          if [ -f "_astro/client.BmwHh9ou.js" ]; then
-            cp _astro/client.BmwHh9ou.js deploy/assets/client.js
-          fi
-          if [ -f "_astro/Particle.B4uU6dot.js" ]; then
-            cp _astro/Particle.B4uU6dot.js deploy/assets/particle.js
-          fi
-          if [ -f "_astro/index.B80Lgev0.js" ]; then
-            cp _astro/index.B80Lgev0.js deploy/assets/index.js
-          fi
-          if [ -f "_astro/jsx-runtime.B4ELNKBR.js" ]; then
-            cp _astro/jsx-runtime.B4ELNKBR.js deploy/assets/jsx-runtime.js
-          fi
-
-          # Copy existing assets directory if exists
-          if [ -d "assets" ]; then
-            cp -r assets/* deploy/assets/ 2>/dev/null || true
-          fi
-
-      - name: Update asset paths in HTML files
+      - name: Copy main index page
         run: |
-          cd deploy
+          cp index.html _site/
 
-          # First, update specific _astro files to new paths
-          find . -name "*.html" -type f -exec sed -i 's|/_astro/_landing_\.DrknUcv3\.css|/go_ai/assets/main.css|g' {} \;
-          find . -name "*.html" -type f -exec sed -i 's|/_astro/client\.BmwHh9ou\.js|/go_ai/assets/client.js|g' {} \;
-          find . -name "*.html" -type f -exec sed -i 's|/_astro/Particle\.B4uU6dot\.js|/go_ai/assets/particle.js|g' {} \;
-          find . -name "*.html" -type f -exec sed -i 's|/_astro/index\.B80Lgev0\.js|/go_ai/assets/index.js|g' {} \;
-          find . -name "*.html" -type f -exec sed -i 's|/_astro/jsx-runtime\.B4ELNKBR\.js|/go_ai/assets/jsx-runtime.js|g' {} \;
-
-          # Update any remaining /_astro/ paths to /go_ai/assets/
-          find . -name "*.html" -type f -exec sed -i 's|/_astro/|/go_ai/assets/|g' {} \;
-
-          # Update root asset paths to include repository name for GitHub Pages
-          find . -name "*.html" -type f -exec sed -i 's|"/assets/|"/go_ai/assets/|g' {} \;
-
-          # Update all root-relative paths to include repository name (but preserve external https links)
-          # First mark external links temporarily
-          find . -name "*.html" -type f -exec sed -i 's|https://|EXTERNAL_HTTPS_MARKER|g' {} \;
-
-          # Update all root-relative paths
-          find . -name "*.html" -type f -exec sed -i 's|href="/|href="/go_ai/|g' {} \;
-          find . -name "*.html" -type f -exec sed -i 's|src="/|src="/go_ai/|g' {} \;
-
-          # Restore external links
-          find . -name "*.html" -type f -exec sed -i 's|EXTERNAL_HTTPS_MARKER|https://|g' {} \;
-
-          # Fix double repository name in paths
-          find . -name "*.html" -type f -exec sed -i 's|/go_ai/go_ai/|/go_ai/|g' {} \;
-
-      - name: Debug deployment structure
+      - name: Copy privacy policy page
         run: |
-          echo "=== Deployment directory structure ==="
-          find deploy -type f | sort
-          echo ""
-          echo "=== Checking specific directories ==="
-          ls -la deploy/
-          echo ""
-          if [ -d "deploy/terms-of-use" ]; then
-            echo "terms-of-use directory exists:"
-            ls -la deploy/terms-of-use/
-          else
-            echo "ERROR: terms-of-use directory not found!"
-          fi
-          echo ""
-          if [ -d "deploy/privacy-and-cookies-policy" ]; then
-            echo "privacy-and-cookies-policy directory exists:"
-            ls -la deploy/privacy-and-cookies-policy/
-          else
-            echo "ERROR: privacy-and-cookies-policy directory not found!"
-          fi
+          mkdir -p _site/privacy-and-cookies-policy
+          cp privacy-and-cookies-policy/index.html _site/privacy-and-cookies-policy/
 
-      - name: Verify path replacements
+      - name: Copy terms of use page
         run: |
-          cd deploy
-          echo "=== Checking for remaining _astro references ==="
-          grep -r "_astro" . || echo "No _astro references found (good!)"
-          echo ""
-          echo "=== Checking logo.png references ==="
-          grep -r "logo.png" . || echo "No logo.png references found"
-          echo ""
-          echo "=== Checking for root-relative paths that need /go_ai/ prefix ==="
-          grep -r 'src="/' . | head -5 || echo "No root-relative src paths found"
-          grep -r 'href="/' . | head -5 || echo "No root-relative href paths found"
-          echo ""
-          echo "=== Sample from main index.html ==="
-          head -70 index.html | tail -10
-          echo ""
-          echo "=== Checking CSS link in index.html ==="
-          grep -n "stylesheet" index.html || echo "No stylesheet links found"
-          echo ""
-          echo "=== Checking component-url in index.html ==="
-          grep -n "component-url" index.html || echo "No component-url found"
+          mkdir -p _site/terms-of-use
+          cp terms-of-use/index.html _site/terms-of-use/
 
-      - name: List deployment contents
+      - name: Copy assets and other files
         run: |
-          echo "Deployment directory structure:"
-          find deploy -type f | sort
+          # Copy CSS and JS files
+          cp -r _astro _site/ 2>/dev/null || true
+
+          # Copy image files
+          cp *.png _site/ 2>/dev/null || true
+          cp *.svg _site/ 2>/dev/null || true
+          cp *.ico _site/ 2>/dev/null || true
+          cp *.xml _site/ 2>/dev/null || true
+          cp *.json _site/ 2>/dev/null || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: "./deploy"
+          path: "_site"
 
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
