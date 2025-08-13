@@ -624,7 +624,7 @@ video {
   background-image: url(/w-right.png);
 }
 .bg-footer-image {
-  background-image: url(/go_ai/footer-bg.png);
+  background-image: url(footer-bg.png);
 }
 .bg-\[length\:60px\] {
   background-size: 60px;
@@ -961,7 +961,7 @@ video {
     width: 70%;
   }
   .sm\:bg-hero-image {
-    background-image: url(/go_ai/agency-banner.png);
+    background-image: url(agency-banner.png);
   }
   .sm\:pl-0 {
     padding-left: 0;
