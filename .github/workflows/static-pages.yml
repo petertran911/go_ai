@@ -42,12 +42,12 @@ jobs:
             cp -r _astro astro
           fi
 
-          # Fix astro paths from /_astro/ to /go_ai/astro/
-          find . -name "*.html" -type f -exec sed -i.bak 's|/_astro/|/go_ai/astro/|g' {} \;
-
-          # Fix all absolute paths to work with GitHub Pages subdirectory /go_ai/
+          # Fix all absolute paths to work with GitHub Pages subdirectory /go_ai/ FIRST
           # This will change /file.ext to /go_ai/file.ext but preserve external URLs (http/https)
           find . -name "*.html" -type f -exec sed -i.bak -E 's|href="/([^h][^t][^t][^p])|href="/go_ai/\1|g; s|src="/([^h][^t][^t][^p])|src="/go_ai/\1|g' {} \;
+
+          # Then fix astro paths from /go_ai/_astro/ to /go_ai/astro/
+          find . -name "*.html" -type f -exec sed -i.bak 's|/go_ai/_astro/|/go_ai/astro/|g' {} \;
 
           # Remove backup files
           find . -name "*.bak" -delete
