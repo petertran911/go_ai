@@ -33,6 +33,24 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Create .nojekyll file
+        run: touch .nojekyll
+      - name: Fix _astro folder for GitHub Pages
+        run: |
+          # Copy _astro to astro (without underscore) to avoid GitHub Pages ignoring it
+          if [ -d "_astro" ]; then
+            cp -r _astro astro
+            # Update HTML files to use new path
+            find . -name "*.html" -type f -exec sed -i.bak 's|/_astro/|/astro/|g' {} \;
+            # Remove backup files
+            find . -name "*.bak" -delete
+          fi
+      - name: Fix absolute paths for GitHub Pages subdirectory
+        run: |
+          # Update all absolute paths to work with GitHub Pages subdirectory
+          find . -name "*.html" -type f -exec sed -i.bak -E 's|href="/([^/])|href="./\1|g; s|src="/([^/])|src="./\1|g' {} \;
+          # Remove backup files
+          find . -name "*.bak" -delete
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
