@@ -1,29 +1,22 @@
 name: Deploy Static Pages to GitHub Pages
 
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
     steps:
@@ -34,21 +27,13 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Create deployment directory
-        run: |
-          mkdir -p _site
+        run: mkdir -p _site
 
-      - name: Copy all content from go_ai directory
+      - name: Copy content from go_ai directory (only inside, not folder)
         run: |
           if [ -d "go_ai" ]; then
-            # Copy nội dung bên trong go_ai (không copy thư mục go_ai)
-            cd go_ai
-            cp -r * ../_site/ 2>/dev/null || true
-            cp -r .* ../_site/ 2>/dev/null || true
-            cd ..
-            
-            echo "Copied content from go_ai directory"
-            echo "Structure after copy:"
-            ls -la _site/
+            rsync -av --progress go_ai/ _site/ --exclude '.git'
+            echo "Copied all content from go_ai into _site/"
           else
             echo "Thư mục go_ai không tồn tại"
           fi
@@ -65,7 +50,6 @@ jobs:
           if [ -f "privacy-and-cookies-policy/index.html" ]; then
             mkdir -p _site/privacy-and-cookies-policy
             cp privacy-and-cookies-policy/index.html _site/privacy-and-cookies-policy/
-            echo "Copied privacy policy page"
           fi
 
       - name: Copy terms of use page
@@ -73,25 +57,20 @@ jobs:
           if [ -f "terms-of-use/index.html" ]; then
             mkdir -p _site/terms-of-use
             cp terms-of-use/index.html _site/terms-of-use/
-            echo "Copied terms of use page"
           fi
 
       - name: Debug - List final structure
         run: |
-          echo "Final structure of _site:"
+          echo "Final _site structure:"
           find _site -type f | sort
           echo ""
-          echo "Checking specific directories:"
-          ls -la _site/privacy-and-cookies-policy/ 2>/dev/null || echo "privacy-and-cookies-policy directory not found"
-          ls -la _site/terms-of-use/ 2>/dev/null || echo "terms-of-use directory not found"
-          ls -la _site/logo.png 2>/dev/null || echo "logo.png not found"
+          ls -la _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: "_site"
 
-  # Deployment job
   deploy:
     environment:
       name: github-pages
