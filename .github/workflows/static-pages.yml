@@ -37,36 +37,51 @@ jobs:
         run: |
           mkdir -p _site
 
-      - name: Copy main index page
+      - name: Copy all files from go_ai directory first
         run: |
-          cp index.html _site/
-
-      - name: Copy privacy policy page
-        run: |
-          mkdir -p _site/privacy-and-cookies-policy
-          cp privacy-and-cookies-policy/index.html _site/privacy-and-cookies-policy/
-
-      - name: Copy terms of use page
-        run: |
-          mkdir -p _site/terms-of-use
-          cp terms-of-use/index.html _site/terms-of-use/
-
-      - name: Copy all files and directories
-        run: |
-          # Copy tất cả nội dung từ thư mục go_ai vào _site
+          # Copy tất cả nội dung từ thư mục go_ai vào _site trước
           if [ -d "go_ai" ]; then
             cp -r go_ai/* _site/ 2>/dev/null || true
             
             # Copy các file ẩn từ go_ai nếu có
             find go_ai -maxdepth 1 -name ".*" -not -name "." -not -name ".." -exec cp -r {} _site/ \; 2>/dev/null || true
+            
+            echo "Copied content from go_ai directory"
           else
             echo "Thư mục go_ai không tồn tại"
           fi
 
-          # List files để debug
-          echo "Files copied to _site:"
-          ls -la _site/
-          echo "Checking for logo.png:"
+      - name: Copy main index page
+        run: |
+          if [ -f "index.html" ]; then
+            cp index.html _site/
+            echo "Copied main index.html"
+          fi
+
+      - name: Copy privacy policy page
+        run: |
+          if [ -f "privacy-and-cookies-policy/index.html" ]; then
+            mkdir -p _site/privacy-and-cookies-policy
+            cp privacy-and-cookies-policy/index.html _site/privacy-and-cookies-policy/
+            echo "Copied privacy policy page"
+          fi
+
+      - name: Copy terms of use page
+        run: |
+          if [ -f "terms-of-use/index.html" ]; then
+            mkdir -p _site/terms-of-use
+            cp terms-of-use/index.html _site/terms-of-use/
+            echo "Copied terms of use page"
+          fi
+
+      - name: Debug - List final structure
+        run: |
+          echo "Final structure of _site:"
+          find _site -type f | sort
+          echo ""
+          echo "Checking specific directories:"
+          ls -la _site/privacy-and-cookies-policy/ 2>/dev/null || echo "privacy-and-cookies-policy directory not found"
+          ls -la _site/terms-of-use/ 2>/dev/null || echo "terms-of-use directory not found"
           ls -la _site/logo.png 2>/dev/null || echo "logo.png not found"
 
       - name: Upload artifact
