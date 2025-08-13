@@ -37,16 +37,18 @@ jobs:
         run: |
           mkdir -p _site
 
-      - name: Copy all files from go_ai directory first
+      - name: Copy all content from go_ai directory
         run: |
-          # Copy tất cả nội dung từ thư mục go_ai vào _site trước
           if [ -d "go_ai" ]; then
-            cp -r go_ai/* _site/ 2>/dev/null || true
-            
-            # Copy các file ẩn từ go_ai nếu có
-            find go_ai -maxdepth 1 -name ".*" -not -name "." -not -name ".." -exec cp -r {} _site/ \; 2>/dev/null || true
+            # Copy nội dung bên trong go_ai (không copy thư mục go_ai)
+            cd go_ai
+            cp -r * ../_site/ 2>/dev/null || true
+            cp -r .* ../_site/ 2>/dev/null || true
+            cd ..
             
             echo "Copied content from go_ai directory"
+            echo "Structure after copy:"
+            ls -la _site/
           else
             echo "Thư mục go_ai không tồn tại"
           fi
