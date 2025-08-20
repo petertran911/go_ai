@@ -45,19 +45,21 @@ jobs:
             echo "Copied main index.html"
           fi
 
-      # - name: Copy privacy policy page
-      #   run: |
-      #     if [ -f "privacy-and-cookies-policy/index.html" ]; then
-      #       mkdir -p _siteprivacy-and-cookies-policy
-      #       cp privacy-and-cookies-policy/index.html _siteprivacy-and-cookies-policy/
-      #     fi
+      - name: Copy privacy policy page
+        run: |
+          if [ -f "privacy-and-cookies-policy/index.html" ]; then
+            mkdir -p _site/privacy-and-cookies-policy
+            cp privacy-and-cookies-policy/index.html _site/privacy-and-cookies-policy/
+            echo "Copied privacy policy page"
+          fi
 
-      # - name: Copy terms of use page
-      #   run: |
-      #     if [ -f "terms-of-use/index.html" ]; then
-      #       mkdir -p _siteterms-of-use
-      #       cp terms-of-use/index.html _siteterms-of-use/
-      #     fi
+      - name: Copy terms of use page
+        run: |
+          if [ -f "terms-of-use/index.html" ]; then
+            mkdir -p _site/terms-of-use
+            cp terms-of-use/index.html _site/terms-of-use/
+            echo "Copied terms of use page"
+          fi
 
       - name: Debug - List final structure
         run: |
